@@ -1,18 +1,20 @@
-﻿@inject ISnackbar Snackbar
+﻿@*@inject ISnackbar Snackbar
 @using Models
 @using Microsoft.AspNetCore.Http;
 @using Site.Data
 
-    <MudPaper @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass" Height="450px" Width="1050px" Outlined="true" Class="@DragClass" Style="margin: 0 auto; border:3px dashed #bdbdbd; background-color: #e0e0e0;">
+    <MudPaper @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass" Height="450px" Width="80%" Outlined="true" Class="@DragClass" Style="margin: 0 auto; border:3px dashed #bdbdbd; background-color: #e0e0e0;">
         @if (!Clearing)
         {
-            <InputFile OnChange="OnInputFileChanged" class="absolute mud-width-full mud-height-full overflow-hidden z-2" style="opacity: 0; border: 15px" accept=".docx, .doc, .pdf" />
+            <InputFile OnChange="OnInputFileChanged" class="absolute mud-width-full mud-height-full overflow-hidden z-2" style="opacity: 0; border: 15px; top: 0px" accept=".docx, .doc, .pdf" />
         }
-        <MudText Class="DragNDrop">Перетащите файл сюда или нажмите, чтобы загрузить.</MudText>
+        <MudText Class="DragNDrop">@MudText</MudText>
 
         @foreach (var file in fileNames)
         {
-            <MudChip Color="Color.Dark" Text="@file" />
+            <div class="container">
+                <MudChip Icon="@Icons.Material.Filled.DocumentScanner" Color="Color.Dark" Text="@file" />
+            </div>
         }
     </MudPaper>
 
@@ -21,6 +23,12 @@
         <MudButton OnClick="Clear" Disabled="@(!fileNames.Any())" Class="button" DisableRipple="true" DisableElevation="true">Очистить</MudButton>
 
         <style>
+            .container {
+                text-align:center;
+                width: 100%;
+                margin: 0 auto;
+            }
+
             .button {
                 color: #090909;
                 padding: 0.7em 1.7em;
@@ -62,6 +70,8 @@
     </MudToolBar>
 
     @code {
+        public string MudText = "Перетащите файл сюда или нажмите, чтобы загрузить.";
+
         private bool Clearing = false;
         private static string DefaultDragClass = "relative rounded-lg border-dashed border-2 pa-4 mt-4 mud-width-full mud-height-full";
         private string DragClass = DefaultDragClass;
@@ -75,7 +85,11 @@
         {
             ClearDragClass();
             file = e.File;
-            
+
+            if (fileNames.Count == 1)
+                fileNames[0] = file.Name;
+                MudText = "";
+
             if (fileNames.Count >= 1)
                 return;
 
@@ -90,26 +104,17 @@
             ClearDragClass();
             await Task.Delay(100);
             Clearing = false;
+            MudText = "Перетащите файл сюда или нажмите, чтобы загрузить.";
         }
 
-        private void Upload()
+        private async void Upload()
         {
             Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
             Snackbar.Add("TODO: Upload your files!", Severity.Normal);
+            var ms = new MemoryStream();
+            await file.OpenReadStream(5120000000).CopyToAsync(ms);
 
-            @*Stream stream = file.OpenReadStream(512000000);*@
-            string path = "wwwroot/Files/" + file.Name;
-
-        //using (var filestream = new FileStream(,))
-            @*File.Create(path).Close();
-            File.Copy("/Users/Alexander/Projects/Site/Site/" + file.Name, path, true);*@
-            @*using (var fileStream = new FileStream(path, FileMode.Create))
-                {
-                    file.OpenReadStream(5120000000).CopyToAsync(fileStream);
-                    stream.CopyToAsync(fileStream);
-                    stream.Close();
-                    fileStream.Close();
-                }*@
+            await File.WriteAllBytesAsync($"/Users/Alexander/Projects/Site/Site/wwwroot/Files/{file.Name}", ms.ToArray());
         }
 
         private void SetDragClass()
@@ -121,4 +126,4 @@
         {
             DragClass = DefaultDragClass;
         }
-    }
+    }*@
